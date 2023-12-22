@@ -1,0 +1,15 @@
+host: 127.0.0.1:5487
+info:
+  contact:
+    email: wwilson008@gmail.com
+    name: Wilson
+    url: https://github.com/littlebluewhite
+  description: This is a account server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Schedule-Task-Command swagger API
+  version: 2.0.0
+paths: {}
+swagger: "2.0"

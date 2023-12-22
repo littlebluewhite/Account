@@ -1,0 +1,20 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a account server.",
+        "title": "Schedule-Task-Command swagger API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Wilson",
+            "url": "https://github.com/littlebluewhite",
+            "email": "wwilson008@gmail.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "2.0.0"
+    },
+    "host": "127.0.0.1:5487",
+    "paths": {}
+}

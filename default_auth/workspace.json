@@ -1,0 +1,20 @@
+{
+  "node_object":{
+    "node": 100,
+    "object": 1000
+  },
+  "account": {
+    "user": 50,
+    "group": 10,
+    "sub_workspace": 4
+  },
+  "alarm": {
+    "rule": 200
+  },
+  "schedule": {
+    "time_template": 10,
+    "command_template": 20,
+    "task_template": 6,
+    "schedule": 4
+  }
+}
