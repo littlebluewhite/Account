@@ -1,4 +1,42 @@
-host: 127.0.0.1:5487
+basePath: /api
+definitions:
+  e_log.Log:
+    properties:
+      account:
+        type: string
+      api_url:
+        type: string
+      content_length:
+        type: integer
+      datetime:
+        type: string
+      ip:
+        type: string
+      method:
+        type: string
+      module:
+        type: string
+      referer:
+        type: string
+      status_code:
+        type: integer
+      timestamp:
+        type: number
+      token:
+        type: string
+      user_agent:
+        type: string
+      web_path:
+        type: string
+    type: object
+  user.Login:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+host: 127.0.0.1:9600
 info:
   contact:
     email: wwilson008@gmail.com
@@ -11,5 +49,52 @@ info:
   termsOfService: http://swagger.io/terms/
   title: Schedule-Task-Command swagger API
   version: 2.0.0
-paths: {}
+paths:
+  /api/account/user/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: username and password
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/user.Login'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: login with username and password
+      tags:
+      - Login
+  /api/logs:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: start time
+        in: query
+        name: start
+        required: true
+        type: string
+      - description: stop time
+        in: query
+        name: stop
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/e_log.Log'
+            type: array
+      summary: get logs history
+      tags:
+      - Log
 swagger: "2.0"

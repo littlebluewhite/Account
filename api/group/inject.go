@@ -1,21 +1,21 @@
 package group
 
 import (
-	"account/api"
-	"account/app/dbs"
-	"account/util/logFile"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/swagger"
+	"github.com/littlebluewhite/Account/api"
+	"github.com/littlebluewhite/Account/api/group/user"
+	"github.com/littlebluewhite/Account/util/my_log"
 	"io"
 	"os"
 )
 
-func Inject(app *fiber.App, dbs dbs.Dbs, wm api.WebsocketManager) {
+func Inject(app *fiber.App, dbs api.Dbs, hm api.HubManager, s api.Servers) {
 	// Middleware
-	log := logFile.NewLogFile("api", "inject.log")
+	log := my_log.NewLog("api/inject.log")
 	fiberLog := getFiberLogFile(log)
 	app.Use(recover.New())
 	app.Use(logger.New(logger.Config{
@@ -26,7 +26,7 @@ func Inject(app *fiber.App, dbs dbs.Dbs, wm api.WebsocketManager) {
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// api group add cors middleware
-	Api := app.Group("/api", cors.New())
+	Api := app.Group("/api/account", cors.New())
 
 	// use middleware to write log
 	o := NewOperate(dbs)
@@ -35,22 +35,23 @@ func Inject(app *fiber.App, dbs dbs.Dbs, wm api.WebsocketManager) {
 		err := c.Next()
 		err = o.WriteLog(c)
 		if err != nil {
-			log.Error().Println(err)
+			log.Errorln(err)
 		}
 		return err
 	})
 	Api.Get("/logs", h.GetHistory)
 
 	// create new group
-	_ = NewAPIGroup(Api, dbs, wm)
+	g := NewAPIGroup(Api, dbs, hm, s)
 
 	// model registration
+	user.RegisterRouter(g)
 }
 
-func getFiberLogFile(log logFile.LogFile) io.Writer {
+func getFiberLogFile(log api.Logger) io.Writer {
 	fiberFile, err := os.OpenFile("./log/fiber.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		log.Error().Fatal("can not open log file: " + err.Error())
+		log.Errorf("can not open log file: " + err.Error())
 	}
 	return io.MultiWriter(fiberFile, os.Stdout)
 }

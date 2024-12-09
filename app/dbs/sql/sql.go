@@ -1,8 +1,8 @@
 package sql
 
 import (
-	"account/util/config"
 	"fmt"
+	"github.com/littlebluewhite/Account/util/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -10,26 +10,16 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
 	"time"
 )
 
-var (
-	rootPath string
-)
-
-func init() {
-	_, b, _, _ := runtime.Caller(0)
-	rootPath = filepath.Dir(filepath.Dir(filepath.Dir(filepath.Dir(b))))
-}
-
-func NewDB(dirPath, fileName, yamlName string) (*gorm.DB, error) {
-	newPath := filepath.Join("./log", dirPath)
+func NewDB(dirPath, fileName string, Config config.SQLConfig) (*gorm.DB, error) {
+	newPath := filepath.Join("./my_log", dirPath)
 	_ = os.MkdirAll(newPath, os.ModePerm)
 	newPath = filepath.Join(newPath, fileName)
 	file, err := os.OpenFile(newPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatal("can not open log file: " + err.Error())
+		log.Fatal("can not open my_log file: " + err.Error())
 	}
 
 	newLogger := logger.New(
@@ -41,9 +31,8 @@ func NewDB(dirPath, fileName, yamlName string) (*gorm.DB, error) {
 			Colorful:                  false,       // 禁用彩色打印
 		},
 	)
-	dbConfig := config.NewConfig[config.DBConfig](rootPath, "env", yamlName)
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=true&parseTime=true&loc=Local",
-		dbConfig.User, dbConfig.Password, dbConfig.Host, dbConfig.Port, dbConfig.DB)
+		Config.User, Config.Password, Config.Host, Config.Port, Config.DB)
 	return gorm.Open(mysql.Open(dsn), &gorm.Config{
 		SkipDefaultTransaction: true,
 		Logger:                 newLogger,

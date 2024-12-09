@@ -1,11 +1,12 @@
 package migrate
 
 import (
-	"account/util/config"
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
+	"github.com/littlebluewhite/Account/util/config"
 	"log"
 	"path/filepath"
 	"runtime"
@@ -27,7 +28,7 @@ type Migration struct {
 	client *migrate.Migrate
 }
 
-func New(config config.DBConfig) *Migration {
+func New(config config.SQLConfig) *Migration {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?multiStatements=true",
 		config.User, config.Password, config.Host, config.Port, config.DB)
 	db, err := sql.Open("mysql", dsn)
@@ -58,7 +59,7 @@ func New(config config.DBConfig) *Migration {
 }
 
 func (m *Migration) To(targetVersion uint) {
-	if err := m.client.Migrate(targetVersion); err != nil && err != migrate.ErrNoChange {
+	if err := m.client.Migrate(targetVersion); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		panic(err)
 	}
 	afterVersion, _, _ := m.client.Version()
@@ -66,7 +67,7 @@ func (m *Migration) To(targetVersion uint) {
 }
 
 func (m *Migration) Up() {
-	if err := m.client.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := m.client.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		panic(err)
 	}
 	afterVersion, _, _ := m.client.Version()
@@ -74,7 +75,7 @@ func (m *Migration) Up() {
 }
 
 func (m *Migration) Down() {
-	if err := m.client.Down(); err != nil && err != migrate.ErrNoChange {
+	if err := m.client.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		panic(err)
 	}
 	version, _, _ := m.client.Version()

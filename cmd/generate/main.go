@@ -1,7 +1,8 @@
 package main
 
 import (
-	"account/app/dbs/sql"
+	"github.com/littlebluewhite/Account/app/dbs/sql"
+	"github.com/littlebluewhite/Account/util/config"
 	"gorm.io/gen"
 	"gorm.io/gen/field"
 )
@@ -17,7 +18,13 @@ func main() {
 		FieldCoverable: true,
 	})
 
-	db, err := sql.NewDB("mySQL", "gen_sql.log", "db")
+	db, err := sql.NewDB("mySQL", "gen_sql.log", config.SQLConfig{
+		Host:     "127.0.0.1",
+		Port:     "3306",
+		User:     "root",
+		Password: "123456",
+		DB:       "account",
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -27,37 +34,53 @@ func main() {
 	g.UseDB(db)
 	defaultAuth := g.GenerateModel("default_auth",
 		gen.FieldType("auth", "json.RawMessage"))
-	userWorkspace := g.GenerateModel("user_workspace",
-		gen.FieldType("auth", "json.RawMessage"))
-	userGroup := g.GenerateModel("user_group")
-	wGroup := g.GenerateModel("w_group",
-		gen.FieldRelate(field.HasMany, "users", userGroup, &field.RelateConfig{
-			GORMTag:       map[string][]string{"foreignKey": {"group_id"}},
-			RelatePointer: false}),
-	)
+	wUserGroup := g.GenerateModel("w_user_group")
+	wGroup := g.GenerateModel("w_group")
 	wUser := g.GenerateModel("w_user",
-		gen.FieldRelate(field.HasMany, "groups", userGroup, &field.RelateConfig{
-			GORMTag:       map[string][]string{"foreignKey": {"user_id"}},
-			RelatePointer: false}),
-		gen.FieldRelate(field.HasMany, "workspaces", userWorkspace, &field.RelateConfig{
+		gen.FieldType("auth", "json.RawMessage"),
+		//gen.FieldRelate(field.Many2Many, "WGroups", wGroup, &field.RelateConfig{
+		//	GORMTag: map[string][]string{"many2many": {"w_user_group"}},
+		//}),
+		gen.FieldRelate(field.HasMany, "WUserGroups", wUserGroup, &field.RelateConfig{
+			GORMTag:       map[string][]string{"foreignKey": {"w_user_id"}},
+			RelatePointer: false,
+		}),
+	)
+	user := g.GenerateModel("user",
+		gen.FieldRelate(field.HasMany, "WUsers", wUser, &field.RelateConfig{
 			GORMTag:       map[string][]string{"foreignKey": {"user_id"}},
 			RelatePointer: false,
 		}),
 	)
 	wGroup = g.GenerateModel("w_group",
-		gen.FieldRelate(field.Many2Many, "users", wUser, &field.RelateConfig{
-			GORMTag: map[string][]string{"many2many": {"user_group"}},
-		}))
+		//gen.FieldRelate(field.Many2Many, "WUsers", wUser, &field.RelateConfig{
+		//	GORMTag: map[string][]string{"many2many": {"w_user_group"}},
+		//}),
+		gen.FieldType("default_auth", "json.RawMessage"),
+		gen.FieldRelate(field.HasMany, "WUserGroups", wUserGroup, &field.RelateConfig{
+			GORMTag:       map[string][]string{"foreignKey": {"w_group_id"}},
+			RelatePointer: false,
+		}),
+	)
+
+	workspaceBase := g.GenerateModel("workspace")
 	workspace := g.GenerateModel("workspace",
-		gen.FieldRelate(field.HasMany, "users", userWorkspace, &field.RelateConfig{
+		gen.FieldType("auth", "json.RawMessage"),
+		gen.FieldType("user_auth_const", "json.RawMessage"),
+		gen.FieldType("user_auth_pass_down", "json.RawMessage"),
+		gen.FieldType("user_auth_custom", "json.RawMessage"),
+		gen.FieldRelate(field.HasMany, "WUsers", wUser, &field.RelateConfig{
 			GORMTag:       map[string][]string{"foreignKey": {"workspace_id"}},
 			RelatePointer: false}),
-		gen.FieldRelate(field.HasMany, "groups", wGroup, &field.RelateConfig{
+		gen.FieldRelate(field.HasMany, "WGroups", wGroup, &field.RelateConfig{
 			GORMTag:       map[string][]string{"foreignKey": {"workspace_id"}},
+			RelatePointer: false}),
+		gen.FieldRelate(field.HasMany, "NextWorkspaces", workspaceBase, &field.RelateConfig{
+			GORMTag:       map[string][]string{"foreignKey": {"pre_workspace_id"}},
 			RelatePointer: false}),
 	)
 
-	g.ApplyBasic(defaultAuth, userGroup, userWorkspace, wUser, wGroup, workspace)
+	g.ApplyBasic(defaultAuth, wUserGroup, wUser, user, wGroup, workspace)
 
 	// execute the action of code generation
 	g.Execute()

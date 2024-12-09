@@ -16,7 +16,7 @@ import (
 
 	"gorm.io/plugin/dbresolver"
 
-	"account/dal/model"
+	"github.com/littlebluewhite/Account/dal/model"
 )
 
 func newWUser(db *gorm.DB, opts ...gen.DOOption) wUser {
@@ -28,24 +28,16 @@ func newWUser(db *gorm.DB, opts ...gen.DOOption) wUser {
 	tableName := _wUser.wUserDo.TableName()
 	_wUser.ALL = field.NewAsterisk(tableName)
 	_wUser.ID = field.NewInt32(tableName, "id")
-	_wUser.UID = field.NewString(tableName, "uid")
-	_wUser.Username = field.NewString(tableName, "username")
-	_wUser.Password = field.NewString(tableName, "password")
-	_wUser.Birthday = field.NewTime(tableName, "birthday")
-	_wUser.Email = field.NewString(tableName, "email")
-	_wUser.Phone = field.NewString(tableName, "phone")
-	_wUser.Country = field.NewString(tableName, "country")
+	_wUser.UserID = field.NewInt32(tableName, "user_id")
+	_wUser.WorkspaceID = field.NewInt32(tableName, "workspace_id")
+	_wUser.Enable = field.NewBool(tableName, "enable")
+	_wUser.Auth = field.NewBytes(tableName, "auth")
+	_wUser.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_wUser.CreatedAt = field.NewTime(tableName, "created_at")
-	_wUser.groups = wUserHasManygroups{
+	_wUser.WUserGroups = wUserHasManyWUserGroups{
 		db: db.Session(&gorm.Session{}),
 
-		RelationField: field.NewRelation("groups", "model.UserGroup"),
-	}
-
-	_wUser.workspaces = wUserHasManyworkspaces{
-		db: db.Session(&gorm.Session{}),
-
-		RelationField: field.NewRelation("workspaces", "model.UserWorkspace"),
+		RelationField: field.NewRelation("WUserGroups", "model.WUserGroup"),
 	}
 
 	_wUser.fillFieldMap()
@@ -56,19 +48,15 @@ func newWUser(db *gorm.DB, opts ...gen.DOOption) wUser {
 type wUser struct {
 	wUserDo wUserDo
 
-	ALL       field.Asterisk
-	ID        field.Int32
-	UID       field.String
-	Username  field.String
-	Password  field.String
-	Birthday  field.Time
-	Email     field.String
-	Phone     field.String
-	Country   field.String
-	CreatedAt field.Time
-	groups    wUserHasManygroups
-
-	workspaces wUserHasManyworkspaces
+	ALL         field.Asterisk
+	ID          field.Int32
+	UserID      field.Int32
+	WorkspaceID field.Int32
+	Enable      field.Bool
+	Auth        field.Bytes
+	UpdatedAt   field.Time
+	CreatedAt   field.Time
+	WUserGroups wUserHasManyWUserGroups
 
 	fieldMap map[string]field.Expr
 }
@@ -86,13 +74,11 @@ func (w wUser) As(alias string) *wUser {
 func (w *wUser) updateTableName(table string) *wUser {
 	w.ALL = field.NewAsterisk(table)
 	w.ID = field.NewInt32(table, "id")
-	w.UID = field.NewString(table, "uid")
-	w.Username = field.NewString(table, "username")
-	w.Password = field.NewString(table, "password")
-	w.Birthday = field.NewTime(table, "birthday")
-	w.Email = field.NewString(table, "email")
-	w.Phone = field.NewString(table, "phone")
-	w.Country = field.NewString(table, "country")
+	w.UserID = field.NewInt32(table, "user_id")
+	w.WorkspaceID = field.NewInt32(table, "workspace_id")
+	w.Enable = field.NewBool(table, "enable")
+	w.Auth = field.NewBytes(table, "auth")
+	w.UpdatedAt = field.NewTime(table, "updated_at")
 	w.CreatedAt = field.NewTime(table, "created_at")
 
 	w.fillFieldMap()
@@ -118,15 +104,13 @@ func (w *wUser) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (w *wUser) fillFieldMap() {
-	w.fieldMap = make(map[string]field.Expr, 11)
+	w.fieldMap = make(map[string]field.Expr, 8)
 	w.fieldMap["id"] = w.ID
-	w.fieldMap["uid"] = w.UID
-	w.fieldMap["username"] = w.Username
-	w.fieldMap["password"] = w.Password
-	w.fieldMap["birthday"] = w.Birthday
-	w.fieldMap["email"] = w.Email
-	w.fieldMap["phone"] = w.Phone
-	w.fieldMap["country"] = w.Country
+	w.fieldMap["user_id"] = w.UserID
+	w.fieldMap["workspace_id"] = w.WorkspaceID
+	w.fieldMap["enable"] = w.Enable
+	w.fieldMap["auth"] = w.Auth
+	w.fieldMap["updated_at"] = w.UpdatedAt
 	w.fieldMap["created_at"] = w.CreatedAt
 
 }
@@ -141,13 +125,13 @@ func (w wUser) replaceDB(db *gorm.DB) wUser {
 	return w
 }
 
-type wUserHasManygroups struct {
+type wUserHasManyWUserGroups struct {
 	db *gorm.DB
 
 	field.RelationField
 }
 
-func (a wUserHasManygroups) Where(conds ...field.Expr) *wUserHasManygroups {
+func (a wUserHasManyWUserGroups) Where(conds ...field.Expr) *wUserHasManyWUserGroups {
 	if len(conds) == 0 {
 		return &a
 	}
@@ -160,27 +144,27 @@ func (a wUserHasManygroups) Where(conds ...field.Expr) *wUserHasManygroups {
 	return &a
 }
 
-func (a wUserHasManygroups) WithContext(ctx context.Context) *wUserHasManygroups {
+func (a wUserHasManyWUserGroups) WithContext(ctx context.Context) *wUserHasManyWUserGroups {
 	a.db = a.db.WithContext(ctx)
 	return &a
 }
 
-func (a wUserHasManygroups) Session(session *gorm.Session) *wUserHasManygroups {
+func (a wUserHasManyWUserGroups) Session(session *gorm.Session) *wUserHasManyWUserGroups {
 	a.db = a.db.Session(session)
 	return &a
 }
 
-func (a wUserHasManygroups) Model(m *model.WUser) *wUserHasManygroupsTx {
-	return &wUserHasManygroupsTx{a.db.Model(m).Association(a.Name())}
+func (a wUserHasManyWUserGroups) Model(m *model.WUser) *wUserHasManyWUserGroupsTx {
+	return &wUserHasManyWUserGroupsTx{a.db.Model(m).Association(a.Name())}
 }
 
-type wUserHasManygroupsTx struct{ tx *gorm.Association }
+type wUserHasManyWUserGroupsTx struct{ tx *gorm.Association }
 
-func (a wUserHasManygroupsTx) Find() (result []*model.UserGroup, err error) {
+func (a wUserHasManyWUserGroupsTx) Find() (result []*model.WUserGroup, err error) {
 	return result, a.tx.Find(&result)
 }
 
-func (a wUserHasManygroupsTx) Append(values ...*model.UserGroup) (err error) {
+func (a wUserHasManyWUserGroupsTx) Append(values ...*model.WUserGroup) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -188,7 +172,7 @@ func (a wUserHasManygroupsTx) Append(values ...*model.UserGroup) (err error) {
 	return a.tx.Append(targetValues...)
 }
 
-func (a wUserHasManygroupsTx) Replace(values ...*model.UserGroup) (err error) {
+func (a wUserHasManyWUserGroupsTx) Replace(values ...*model.WUserGroup) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -196,7 +180,7 @@ func (a wUserHasManygroupsTx) Replace(values ...*model.UserGroup) (err error) {
 	return a.tx.Replace(targetValues...)
 }
 
-func (a wUserHasManygroupsTx) Delete(values ...*model.UserGroup) (err error) {
+func (a wUserHasManyWUserGroupsTx) Delete(values ...*model.WUserGroup) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -204,82 +188,11 @@ func (a wUserHasManygroupsTx) Delete(values ...*model.UserGroup) (err error) {
 	return a.tx.Delete(targetValues...)
 }
 
-func (a wUserHasManygroupsTx) Clear() error {
+func (a wUserHasManyWUserGroupsTx) Clear() error {
 	return a.tx.Clear()
 }
 
-func (a wUserHasManygroupsTx) Count() int64 {
-	return a.tx.Count()
-}
-
-type wUserHasManyworkspaces struct {
-	db *gorm.DB
-
-	field.RelationField
-}
-
-func (a wUserHasManyworkspaces) Where(conds ...field.Expr) *wUserHasManyworkspaces {
-	if len(conds) == 0 {
-		return &a
-	}
-
-	exprs := make([]clause.Expression, 0, len(conds))
-	for _, cond := range conds {
-		exprs = append(exprs, cond.BeCond().(clause.Expression))
-	}
-	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
-	return &a
-}
-
-func (a wUserHasManyworkspaces) WithContext(ctx context.Context) *wUserHasManyworkspaces {
-	a.db = a.db.WithContext(ctx)
-	return &a
-}
-
-func (a wUserHasManyworkspaces) Session(session *gorm.Session) *wUserHasManyworkspaces {
-	a.db = a.db.Session(session)
-	return &a
-}
-
-func (a wUserHasManyworkspaces) Model(m *model.WUser) *wUserHasManyworkspacesTx {
-	return &wUserHasManyworkspacesTx{a.db.Model(m).Association(a.Name())}
-}
-
-type wUserHasManyworkspacesTx struct{ tx *gorm.Association }
-
-func (a wUserHasManyworkspacesTx) Find() (result []*model.UserWorkspace, err error) {
-	return result, a.tx.Find(&result)
-}
-
-func (a wUserHasManyworkspacesTx) Append(values ...*model.UserWorkspace) (err error) {
-	targetValues := make([]interface{}, len(values))
-	for i, v := range values {
-		targetValues[i] = v
-	}
-	return a.tx.Append(targetValues...)
-}
-
-func (a wUserHasManyworkspacesTx) Replace(values ...*model.UserWorkspace) (err error) {
-	targetValues := make([]interface{}, len(values))
-	for i, v := range values {
-		targetValues[i] = v
-	}
-	return a.tx.Replace(targetValues...)
-}
-
-func (a wUserHasManyworkspacesTx) Delete(values ...*model.UserWorkspace) (err error) {
-	targetValues := make([]interface{}, len(values))
-	for i, v := range values {
-		targetValues[i] = v
-	}
-	return a.tx.Delete(targetValues...)
-}
-
-func (a wUserHasManyworkspacesTx) Clear() error {
-	return a.tx.Clear()
-}
-
-func (a wUserHasManyworkspacesTx) Count() int64 {
+func (a wUserHasManyWUserGroupsTx) Count() int64 {
 	return a.tx.Count()
 }
 

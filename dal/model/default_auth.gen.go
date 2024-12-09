@@ -13,8 +13,8 @@ const TableNameDefaultAuth = "default_auth"
 // DefaultAuth mapped from table <default_auth>
 type DefaultAuth struct {
 	ID   int32           `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
-	Type *string         `gorm:"column:type" json:"type"`
-	Auth json.RawMessage `gorm:"column:auth" json:"auth"`
+	Type string          `gorm:"column:type;not null" json:"type"`
+	Auth json.RawMessage `gorm:"column:auth;default:json_object()" json:"auth"`
 }
 
 // TableName DefaultAuth's table name

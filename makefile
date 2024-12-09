@@ -35,7 +35,7 @@ run-m:
 	docker run --name account-migrate --rm --network="host" account-migrate:latest
 
 run-a:
-	docker run --name account -p 5487:5487 --network="host" -v ${PWD}/docker/log:/app/log account:latest
+	docker run --name account -p 9600:9600 --network="host" -v ${PWD}/docker/log:/app/log account:latest
 
 
 # docker exec -it <container-id> sh

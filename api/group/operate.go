@@ -6,22 +6,20 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	"github.com/influxdata/influxdb-client-go/v2/api"
-	"schedule_task_command/app/dbs"
-	"schedule_task_command/entry/e_log"
+	"github.com/littlebluewhite/Account/app/dbs/influxdb"
+	"github.com/littlebluewhite/Account/entry/e_log"
 	"time"
 )
 
 type Operate struct {
-	idb logDB
+	idb *influxdb.Influx
 }
 
-type logDB interface {
-	Writer() api.WriteAPIBlocking
-	Querier() api.QueryAPI
+type dbs interface {
+	GetIdb() *influxdb.Influx
 }
 
-func NewOperate(dbs dbs.Dbs) *Operate {
+func NewOperate(dbs dbs) *Operate {
 	o := &Operate{
 		idb: dbs.GetIdb(),
 	}
@@ -29,7 +27,6 @@ func NewOperate(dbs dbs.Dbs) *Operate {
 }
 
 func (o *Operate) WriteLog(c *fiber.Ctx) (err error) {
-	ctx := context.Background()
 	now := time.Now()
 	response := c.Response()
 	l := e_log.Log{
@@ -39,7 +36,6 @@ func (o *Operate) WriteLog(c *fiber.Ctx) (err error) {
 		Datetime:      now,
 		IP:            c.IP(),
 		Referer:       c.Get("Referer"),
-		RequestLine:   fmt.Sprintf("%s %s", c.Method(), c.OriginalURL()),
 		StatusCode:    response.StatusCode(),
 		Token:         c.Get("Authorization"),
 		UserAgent:     c.Get("User-Agent"),
@@ -54,9 +50,7 @@ func (o *Operate) WriteLog(c *fiber.Ctx) (err error) {
 		map[string]interface{}{"data": jL},
 		now,
 	)
-	if err = o.idb.Writer().WritePoint(ctx, p); err != nil {
-		return
-	}
+	o.idb.Writer().WritePoint(p)
 	return
 }
 
@@ -66,7 +60,7 @@ func (o *Operate) ReadLog(start, stop string) (logs []e_log.Log, err error) {
 	if stop != "" {
 		stopValue = fmt.Sprintf(", stop: %s", stop)
 	}
-	stmt := fmt.Sprintf(`from(bucket:"schedule")
+	stmt := fmt.Sprintf(`from(bucket:"account")
 |> range(start: %s%s)
 |> filter(fn: (r) => r._measurement == "log")
 |> filter(fn: (r) => r._field == "data")

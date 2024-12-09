@@ -6,7 +6,8 @@
   "account": {
     "user": 50,
     "group": 10,
-    "sub_workspace": 4
+    "sub_workspace": 4,
+    "max_depth": 1
   },
   "alarm": {
     "rule": 200

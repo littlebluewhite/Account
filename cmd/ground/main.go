@@ -6,20 +6,18 @@ import (
 )
 
 func main() {
-	v := make(map[string]string)
+	v := make(map[string]interface{})
 	//var v map[string]string
-	b := []byte(`{"id": "1", "name": "aaa"}`)
-	e := json.Unmarshal(b, &v)
-	fmt.Println(e)
-	a := map[string]string{
-		"a": "fff",
-		"b": "888",
-	}
-	fmt.Println(a == nil)
-	if a != nil {
-		for key, value := range a {
-			v[key] = value
-		}
-	}
-	fmt.Println(v)
+	cMap := make(map[string]interface{})
+	cMap["a"] = "b"
+	c, _ := json.Marshal(v)
+	fmt.Println(string(c))
+	pMap := make(map[string]interface{})
+	pMap["bbb"] = "ccc"
+	p, _ := json.Marshal(pMap)
+	fmt.Println(string(p))
+	v["const"] = cMap
+	v["pass_down"] = pMap
+	result, _ := json.Marshal(v)
+	fmt.Println(string(result))
 }

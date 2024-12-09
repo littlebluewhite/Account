@@ -1,16 +1,20 @@
 {
   "const": {
     "default_auth": {
-      "system": 0,
+      "pass_down": 0,
       "custom": 0
     },
-    "user": 0,
+    "user": 0 ,
     "group":0,
     "sub_workspace":{
       "is_join": false,
-      "control": 0
+      "control": 1
     }
   },
-  "system": {},
-  "custom": {}
+  "pass_down": {
+    "a": 0,
+    "user": 0
+  },
+  "custom": {
+  }
 }

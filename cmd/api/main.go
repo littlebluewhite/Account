@@ -1,15 +1,24 @@
 package main
 
 import (
-	"account/api/group"
-	"account/app/dbs"
-	"account/app/websocket_manager"
-	_ "account/docs"
-	"account/util/config"
-	"account/util/logFile"
+	"fmt"
+	version "github.com/littlebluewhite/Account"
+	"github.com/littlebluewhite/Account/api/group"
+	"github.com/littlebluewhite/Account/app/dbs"
+	"github.com/littlebluewhite/Account/app/servers"
+	"github.com/littlebluewhite/Account/app/servers/user_server"
+	"github.com/littlebluewhite/Account/app/servers/workspace_server"
+	"github.com/littlebluewhite/Account/app/websocket_hub"
+	"github.com/littlebluewhite/Account/docs"
+	"github.com/littlebluewhite/Account/util/my_log"
+	"path/filepath"
+	"runtime"
+
 	"context"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	_ "github.com/littlebluewhite/Account/docs"
+	"github.com/littlebluewhite/Account/util/config"
 	"os/signal"
 	"strings"
 	"syscall"
@@ -17,13 +26,14 @@ import (
 )
 
 var (
-	mainLog logFile.LogFile
+	rootPath string
 )
 
 // 初始化配置
 func init() {
 	// log配置
-	mainLog = logFile.NewLogFile("", "main.log")
+	_, b, _, _ := runtime.Caller(0)
+	rootPath = filepath.Dir(filepath.Dir(filepath.Dir(b)))
 }
 
 // @title           Schedule-Task-Command swagger API
@@ -38,28 +48,46 @@ func init() {
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host      127.0.0.1:5487
+// @host      127.0.0.1:9600
+// @BasePath  /api
 
 func main() {
+	mainLog := my_log.NewLog("main")
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	mainLog.Info().Println("command module start")
+	mainLog.Infoln("command module start")
+
+	// read config
+	Config := config.NewConfig[config.Config](rootPath, "config", "config", config.Yaml)
+
+	ServerConfig := Config.Server
+
+	// swagger docs host
+	docsHost := fmt.Sprintf("%s:%s", ServerConfig.SwaggerHost, ServerConfig.Port)
+	docs.SwaggerInfo.Host = docsHost
+	docs.SwaggerInfo.Version = version.Version
 
 	// DBs start includes SQL Cache
-	DBS := dbs.NewDbs(mainLog, false)
+	DBS := dbs.NewDbs(mainLog, false, Config)
 	defer func() {
 		DBS.GetIdb().Close()
-		mainLog.Info().Println("influxDB Disconnect")
+		mainLog.Infoln("influxDB Disconnect")
 	}()
 
 	// create websocket manager
-	wm := websocket_manager.NewWebsocketManager()
-	// run websocket manager
-	go wm.Run()
+	hm := websocket_hub.NewHubManager()
 
-	ServerConfig := config.NewConfig[config.ServerConfig](".", "env", "server")
+	// create servers
+	userServer := user_server.NewUserServer(DBS)
+	workspaceServer := workspace_server.NewWorkspaceServer(DBS, userServer)
+	s := servers.NewServers(userServer, workspaceServer)
+
+	// start server
+	go func() {
+		s.Start(ctx)
+	}()
 
 	var sb strings.Builder
 	sb.WriteString(":")
@@ -75,19 +103,19 @@ func main() {
 		},
 	)
 
-	group.Inject(apiServer, DBS, wm)
+	group.Inject(apiServer, DBS, hm, s)
 
 	// for api server shout down gracefully
 	serverShutdown := make(chan struct{})
 	go func() {
 		_ = <-ctx.Done()
-		mainLog.Info().Println("Gracefully shutting down api server")
+		mainLog.Infoln("Gracefully shutting down api server")
 		_ = apiServer.Shutdown()
 		serverShutdown <- struct{}{}
 	}()
 
-	if err := apiServer.Listen(":5487"); err != nil {
-		mainLog.Error().Fatalf("listen: %s\n", err)
+	if err := apiServer.Listen(":9600"); err != nil {
+		mainLog.Errorf("listen: %s\n", err)
 	}
 
 	// Listen for the interrupt signal.
@@ -95,7 +123,8 @@ func main() {
 
 	// Restore default behavior on the interrupt signal and notify user of shutdown.
 	stop()
-	time.Sleep(1 * time.Second)
-	mainLog.Info().Println("Server exiting")
+	DBS.Close()
+	workspaceServer.Close()
+	mainLog.Infoln("Server exiting")
 
 }

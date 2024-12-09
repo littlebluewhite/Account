@@ -1,11 +1,11 @@
 package main
 
 import (
-	config "account/util/config"
-	"account/util/migrate"
 	"flag"
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	config "github.com/littlebluewhite/Account/util/config"
+	"github.com/littlebluewhite/Account/util/migrate"
 )
 
 func main() {
@@ -17,11 +17,12 @@ func main() {
 	flag.BoolVar(&to, "to", false, "to version")
 	flag.IntVar(&version, "version", -1, "version")
 	flag.Parse()
-	var c config.DBConfig
+	Config := config.NewConfig[config.Config](".", "config", "config", config.Yaml)
+	var c config.SQLConfig
 	if t {
-		c = config.NewConfig[config.DBConfig](".", "env", "db_test")
+		c = Config.TestSQL
 	} else {
-		c = config.NewConfig[config.DBConfig](".", "env", "db")
+		c = Config.SQL
 	}
 
 	client := migrate.New(c)

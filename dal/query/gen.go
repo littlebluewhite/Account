@@ -17,38 +17,38 @@ import (
 
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
-		db:            db,
-		DefaultAuth:   newDefaultAuth(db, opts...),
-		UserGroup:     newUserGroup(db, opts...),
-		UserWorkspace: newUserWorkspace(db, opts...),
-		WGroup:        newWGroup(db, opts...),
-		WUser:         newWUser(db, opts...),
-		Workspace:     newWorkspace(db, opts...),
+		db:          db,
+		DefaultAuth: newDefaultAuth(db, opts...),
+		User:        newUser(db, opts...),
+		WGroup:      newWGroup(db, opts...),
+		WUser:       newWUser(db, opts...),
+		WUserGroup:  newWUserGroup(db, opts...),
+		Workspace:   newWorkspace(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
-	DefaultAuth   defaultAuth
-	UserGroup     userGroup
-	UserWorkspace userWorkspace
-	WGroup        wGroup
-	WUser         wUser
-	Workspace     workspace
+	DefaultAuth defaultAuth
+	User        user
+	WGroup      wGroup
+	WUser       wUser
+	WUserGroup  wUserGroup
+	Workspace   workspace
 }
 
 func (q *Query) Available() bool { return q.db != nil }
 
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
-		db:            db,
-		DefaultAuth:   q.DefaultAuth.clone(db),
-		UserGroup:     q.UserGroup.clone(db),
-		UserWorkspace: q.UserWorkspace.clone(db),
-		WGroup:        q.WGroup.clone(db),
-		WUser:         q.WUser.clone(db),
-		Workspace:     q.Workspace.clone(db),
+		db:          db,
+		DefaultAuth: q.DefaultAuth.clone(db),
+		User:        q.User.clone(db),
+		WGroup:      q.WGroup.clone(db),
+		WUser:       q.WUser.clone(db),
+		WUserGroup:  q.WUserGroup.clone(db),
+		Workspace:   q.Workspace.clone(db),
 	}
 }
 
@@ -62,33 +62,33 @@ func (q *Query) WriteDB() *Query {
 
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
-		db:            db,
-		DefaultAuth:   q.DefaultAuth.replaceDB(db),
-		UserGroup:     q.UserGroup.replaceDB(db),
-		UserWorkspace: q.UserWorkspace.replaceDB(db),
-		WGroup:        q.WGroup.replaceDB(db),
-		WUser:         q.WUser.replaceDB(db),
-		Workspace:     q.Workspace.replaceDB(db),
+		db:          db,
+		DefaultAuth: q.DefaultAuth.replaceDB(db),
+		User:        q.User.replaceDB(db),
+		WGroup:      q.WGroup.replaceDB(db),
+		WUser:       q.WUser.replaceDB(db),
+		WUserGroup:  q.WUserGroup.replaceDB(db),
+		Workspace:   q.Workspace.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
-	DefaultAuth   *defaultAuthDo
-	UserGroup     *userGroupDo
-	UserWorkspace *userWorkspaceDo
-	WGroup        *wGroupDo
-	WUser         *wUserDo
-	Workspace     *workspaceDo
+	DefaultAuth *defaultAuthDo
+	User        *userDo
+	WGroup      *wGroupDo
+	WUser       *wUserDo
+	WUserGroup  *wUserGroupDo
+	Workspace   *workspaceDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
-		DefaultAuth:   q.DefaultAuth.WithContext(ctx),
-		UserGroup:     q.UserGroup.WithContext(ctx),
-		UserWorkspace: q.UserWorkspace.WithContext(ctx),
-		WGroup:        q.WGroup.WithContext(ctx),
-		WUser:         q.WUser.WithContext(ctx),
-		Workspace:     q.Workspace.WithContext(ctx),
+		DefaultAuth: q.DefaultAuth.WithContext(ctx),
+		User:        q.User.WithContext(ctx),
+		WGroup:      q.WGroup.WithContext(ctx),
+		WUser:       q.WUser.WithContext(ctx),
+		WUserGroup:  q.WUserGroup.WithContext(ctx),
+		Workspace:   q.Workspace.WithContext(ctx),
 	}
 }
 

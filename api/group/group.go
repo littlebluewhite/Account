@@ -1,22 +1,23 @@
 package group
 
 import (
-	"account/api"
-	"account/app/dbs"
 	"github.com/gofiber/fiber/v2"
+	"github.com/littlebluewhite/Account/api"
 )
 
 type Group struct {
 	app fiber.Router
-	dbs dbs.Dbs
-	wm  api.WebsocketManager
+	dbs api.Dbs
+	hm  api.HubManager
+	s   api.Servers
 }
 
-func NewAPIGroup(app fiber.Router, dbs dbs.Dbs, wm api.WebsocketManager) *Group {
+func NewAPIGroup(app fiber.Router, dbs api.Dbs, hm api.HubManager, s api.Servers) *Group {
 	return &Group{
 		app: app,
 		dbs: dbs,
-		wm:  wm,
+		hm:  hm,
+		s:   s,
 	}
 }
 
@@ -24,10 +25,14 @@ func (g *Group) GetApp() fiber.Router {
 	return g.app
 }
 
-func (g *Group) GetDbs() dbs.Dbs {
+func (g *Group) GetDbs() api.Dbs {
 	return g.dbs
 }
 
-func (g *Group) GetWebsocketManager() api.WebsocketManager {
-	return g.wm
+func (g *Group) GetWebsocketManager() api.HubManager {
+	return g.hm
+}
+
+func (g *Group) GetServers() api.Servers {
+	return g.s
 }

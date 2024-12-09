@@ -5,6 +5,7 @@
 package model
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -12,17 +13,14 @@ const TableNameWUser = "w_user"
 
 // WUser mapped from table <w_user>
 type WUser struct {
-	ID         int32           `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
-	UID        string          `gorm:"column:uid;not null" json:"uid"`
-	Username   *string         `gorm:"column:username" json:"username"`
-	Password   *string         `gorm:"column:password" json:"password"`
-	Birthday   *time.Time      `gorm:"column:birthday" json:"birthday"`
-	Email      *string         `gorm:"column:email" json:"email"`
-	Phone      *string         `gorm:"column:phone" json:"phone"`
-	Country    *string         `gorm:"column:country" json:"country"`
-	CreatedAt  *time.Time      `gorm:"column:created_at;default:now()" json:"created_at"`
-	groups     []UserGroup     `gorm:"foreignKey:user_id" json:"groups"`
-	workspaces []UserWorkspace `gorm:"foreignKey:user_id" json:"workspaces"`
+	ID          int32           `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
+	UserID      int32           `gorm:"column:user_id;not null" json:"user_id"`
+	WorkspaceID int32           `gorm:"column:workspace_id;not null" json:"workspace_id"`
+	Enable      bool            `gorm:"column:enable;not null" json:"enable"`
+	Auth        json.RawMessage `gorm:"column:auth;default:json_object()" json:"auth"`
+	UpdatedAt   *time.Time      `gorm:"column:updated_at;default:CURRENT_TIMESTAMP" json:"updated_at"`
+	CreatedAt   *time.Time      `gorm:"column:created_at;default:now()" json:"created_at"`
+	WUserGroups []WUserGroup    `gorm:"foreignKey:w_user_id" json:"w_user_groups"`
 }
 
 // TableName WUser's table name

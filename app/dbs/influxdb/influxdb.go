@@ -1,35 +1,41 @@
 package influxdb
 
 import (
-	"account/util/config"
 	"fmt"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
-	"path/filepath"
-	"runtime"
-)
-
-var (
-	rootPath string
+	"github.com/littlebluewhite/Account/util/config"
 )
 
 type Influx struct {
 	client  influxdb2.Client
-	writer  api.WriteAPIBlocking
+	writer  api.WriteAPI
 	querier api.QueryAPI
 }
 
-func init() {
-	_, b, _, _ := runtime.Caller(0)
-	rootPath = filepath.Dir(filepath.Dir(filepath.Dir(filepath.Dir(b))))
+type Logger interface {
+	Infoln(args ...interface{})
+	Infof(s string, args ...interface{})
+	Errorln(args ...interface{})
+	Errorf(s string, args ...interface{})
+	Warnln(args ...interface{})
+	Warnf(s string, args ...interface{})
 }
 
-func NewInfluxdb(yamlName string) *Influx {
-	influxConfig := config.NewConfig[config.InfluxdbConfig](rootPath, "env", yamlName)
+func NewInfluxdb(influxConfig config.InfluxdbConfig, log Logger) *Influx {
 	dsn := fmt.Sprintf("http://%s:%s", influxConfig.Host, influxConfig.Port)
-	client := influxdb2.NewClient(dsn, influxConfig.Token)
-	writeAPI := client.WriteAPIBlocking(influxConfig.Org, influxConfig.Bucket)
+	writeOptions := influxdb2.DefaultOptions().SetBatchSize(500).SetFlushInterval(10000)
+	client := influxdb2.NewClientWithOptions(dsn, influxConfig.Token, writeOptions)
+	writeAPI := client.WriteAPI(influxConfig.Org, influxConfig.Bucket)
 	queryAPI := client.QueryAPI(influxConfig.Org)
+
+	// handle error
+	go func() {
+		for err := range writeAPI.Errors() {
+			log.Errorln(fmt.Printf("Write error: %s", err.Error()))
+		}
+	}()
+
 	return &Influx{
 		client,
 		writeAPI,
@@ -41,7 +47,7 @@ func (i *Influx) Close() {
 	i.client.Close()
 }
 
-func (i *Influx) Writer() api.WriteAPIBlocking {
+func (i *Influx) Writer() api.WriteAPI {
 	return i.writer
 }
 

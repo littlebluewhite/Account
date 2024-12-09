@@ -16,7 +16,7 @@ import (
 
 	"gorm.io/plugin/dbresolver"
 
-	"account/dal/model"
+	"github.com/littlebluewhite/Account/dal/model"
 )
 
 func newWGroup(db *gorm.DB, opts ...gen.DOOption) wGroup {
@@ -32,21 +32,13 @@ func newWGroup(db *gorm.DB, opts ...gen.DOOption) wGroup {
 	_wGroup.CreatorID = field.NewInt32(tableName, "creator_id")
 	_wGroup.WorkspaceID = field.NewInt32(tableName, "workspace_id")
 	_wGroup.Enable = field.NewBool(tableName, "enable")
+	_wGroup.DefaultAuth = field.NewBytes(tableName, "default_auth")
+	_wGroup.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_wGroup.CreatedAt = field.NewTime(tableName, "created_at")
-	_wGroup.users = wGroupManyToManyusers{
+	_wGroup.WUserGroups = wGroupHasManyWUserGroups{
 		db: db.Session(&gorm.Session{}),
 
-		RelationField: field.NewRelation("users", "model.WUser"),
-		groups: struct {
-			field.RelationField
-		}{
-			RelationField: field.NewRelation("users.groups", "model.UserGroup"),
-		},
-		workspaces: struct {
-			field.RelationField
-		}{
-			RelationField: field.NewRelation("users.workspaces", "model.UserWorkspace"),
-		},
+		RelationField: field.NewRelation("WUserGroups", "model.WUserGroup"),
 	}
 
 	_wGroup.fillFieldMap()
@@ -63,8 +55,10 @@ type wGroup struct {
 	CreatorID   field.Int32
 	WorkspaceID field.Int32
 	Enable      field.Bool
+	DefaultAuth field.Bytes
+	UpdatedAt   field.Time
 	CreatedAt   field.Time
-	users       wGroupManyToManyusers
+	WUserGroups wGroupHasManyWUserGroups
 
 	fieldMap map[string]field.Expr
 }
@@ -86,6 +80,8 @@ func (w *wGroup) updateTableName(table string) *wGroup {
 	w.CreatorID = field.NewInt32(table, "creator_id")
 	w.WorkspaceID = field.NewInt32(table, "workspace_id")
 	w.Enable = field.NewBool(table, "enable")
+	w.DefaultAuth = field.NewBytes(table, "default_auth")
+	w.UpdatedAt = field.NewTime(table, "updated_at")
 	w.CreatedAt = field.NewTime(table, "created_at")
 
 	w.fillFieldMap()
@@ -111,12 +107,14 @@ func (w *wGroup) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (w *wGroup) fillFieldMap() {
-	w.fieldMap = make(map[string]field.Expr, 7)
+	w.fieldMap = make(map[string]field.Expr, 9)
 	w.fieldMap["id"] = w.ID
 	w.fieldMap["name"] = w.Name
 	w.fieldMap["creator_id"] = w.CreatorID
 	w.fieldMap["workspace_id"] = w.WorkspaceID
 	w.fieldMap["enable"] = w.Enable
+	w.fieldMap["default_auth"] = w.DefaultAuth
+	w.fieldMap["updated_at"] = w.UpdatedAt
 	w.fieldMap["created_at"] = w.CreatedAt
 
 }
@@ -131,20 +129,13 @@ func (w wGroup) replaceDB(db *gorm.DB) wGroup {
 	return w
 }
 
-type wGroupManyToManyusers struct {
+type wGroupHasManyWUserGroups struct {
 	db *gorm.DB
 
 	field.RelationField
-
-	groups struct {
-		field.RelationField
-	}
-	workspaces struct {
-		field.RelationField
-	}
 }
 
-func (a wGroupManyToManyusers) Where(conds ...field.Expr) *wGroupManyToManyusers {
+func (a wGroupHasManyWUserGroups) Where(conds ...field.Expr) *wGroupHasManyWUserGroups {
 	if len(conds) == 0 {
 		return &a
 	}
@@ -157,27 +148,27 @@ func (a wGroupManyToManyusers) Where(conds ...field.Expr) *wGroupManyToManyusers
 	return &a
 }
 
-func (a wGroupManyToManyusers) WithContext(ctx context.Context) *wGroupManyToManyusers {
+func (a wGroupHasManyWUserGroups) WithContext(ctx context.Context) *wGroupHasManyWUserGroups {
 	a.db = a.db.WithContext(ctx)
 	return &a
 }
 
-func (a wGroupManyToManyusers) Session(session *gorm.Session) *wGroupManyToManyusers {
+func (a wGroupHasManyWUserGroups) Session(session *gorm.Session) *wGroupHasManyWUserGroups {
 	a.db = a.db.Session(session)
 	return &a
 }
 
-func (a wGroupManyToManyusers) Model(m *model.WGroup) *wGroupManyToManyusersTx {
-	return &wGroupManyToManyusersTx{a.db.Model(m).Association(a.Name())}
+func (a wGroupHasManyWUserGroups) Model(m *model.WGroup) *wGroupHasManyWUserGroupsTx {
+	return &wGroupHasManyWUserGroupsTx{a.db.Model(m).Association(a.Name())}
 }
 
-type wGroupManyToManyusersTx struct{ tx *gorm.Association }
+type wGroupHasManyWUserGroupsTx struct{ tx *gorm.Association }
 
-func (a wGroupManyToManyusersTx) Find() (result []*model.WUser, err error) {
+func (a wGroupHasManyWUserGroupsTx) Find() (result []*model.WUserGroup, err error) {
 	return result, a.tx.Find(&result)
 }
 
-func (a wGroupManyToManyusersTx) Append(values ...*model.WUser) (err error) {
+func (a wGroupHasManyWUserGroupsTx) Append(values ...*model.WUserGroup) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -185,7 +176,7 @@ func (a wGroupManyToManyusersTx) Append(values ...*model.WUser) (err error) {
 	return a.tx.Append(targetValues...)
 }
 
-func (a wGroupManyToManyusersTx) Replace(values ...*model.WUser) (err error) {
+func (a wGroupHasManyWUserGroupsTx) Replace(values ...*model.WUserGroup) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -193,7 +184,7 @@ func (a wGroupManyToManyusersTx) Replace(values ...*model.WUser) (err error) {
 	return a.tx.Replace(targetValues...)
 }
 
-func (a wGroupManyToManyusersTx) Delete(values ...*model.WUser) (err error) {
+func (a wGroupHasManyWUserGroupsTx) Delete(values ...*model.WUserGroup) (err error) {
 	targetValues := make([]interface{}, len(values))
 	for i, v := range values {
 		targetValues[i] = v
@@ -201,11 +192,11 @@ func (a wGroupManyToManyusersTx) Delete(values ...*model.WUser) (err error) {
 	return a.tx.Delete(targetValues...)
 }
 
-func (a wGroupManyToManyusersTx) Clear() error {
+func (a wGroupHasManyWUserGroupsTx) Clear() error {
 	return a.tx.Clear()
 }
 
-func (a wGroupManyToManyusersTx) Count() int64 {
+func (a wGroupHasManyWUserGroupsTx) Count() int64 {
 	return a.tx.Count()
 }
 

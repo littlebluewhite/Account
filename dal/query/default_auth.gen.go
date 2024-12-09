@@ -16,7 +16,7 @@ import (
 
 	"gorm.io/plugin/dbresolver"
 
-	"account/dal/model"
+	"github.com/littlebluewhite/Account/dal/model"
 )
 
 func newDefaultAuth(db *gorm.DB, opts ...gen.DOOption) defaultAuth {
