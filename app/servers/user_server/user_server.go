@@ -5,9 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/littlebluewhite/Account/api"
 	"github.com/littlebluewhite/Account/dal/model"
 	"github.com/littlebluewhite/Account/dal/query"
+	"github.com/littlebluewhite/Account/entry/domain"
 	"github.com/littlebluewhite/Account/entry/e_user"
 	"github.com/littlebluewhite/Account/util"
 	"github.com/littlebluewhite/Account/util/convert"
@@ -20,8 +20,8 @@ import (
 )
 
 type UserServer struct {
-	d    api.Dbs
-	l    api.Logger
+	d    domain.Dbs
+	l    domain.Logger
 	salt string
 	wg   *sync.WaitGroup
 }
@@ -31,7 +31,7 @@ type tokenTime struct {
 	timeout int
 }
 
-func NewUserServer(d api.Dbs) *UserServer {
+func NewUserServer(d domain.Dbs) *UserServer {
 	l := my_log.NewLog("app/user_server")
 	return &UserServer{d: d, l: l, salt: "Wilson", wg: new(sync.WaitGroup)}
 }
@@ -339,15 +339,56 @@ func (u *UserServer) Delete(ids []int32) error {
 	return nil
 }
 
-func (u *UserServer) Login(username string, password string) error {
+func (u *UserServer) Login(username string, password string) (user model.User, err error) {
 	_, userByUsernameCacheMap := u.getUserMaps()
 	user, ok := userByUsernameCacheMap[username]
 	if !ok {
-		return NoUsername
+		err = NoUsername
+		return
 	}
 	if user.Password != password {
-		return WrongPassword
+		err = WrongPassword
+		return
 	}
 	u.createToken(int(user.ID))
+	return
+}
+
+func (u *UserServer) Register(register domain.Register) error {
+	_, userByUsernameCacheMap := u.getUserMaps()
+	_, ok := userByUsernameCacheMap[register.Username]
+	if ok {
+		return UsernameExist
+	}
+	CreateUsers := convert.CreateConvert[e_user.UserCreate, domain.Register]([]*domain.Register{&register})
+	_, err := u.Create(CreateUsers)
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+func (u *UserServer) GetUserByUsername(username string) (*model.User, error) {
+	_, userByUsernameCacheMap := u.getUserMaps()
+	user, ok := userByUsernameCacheMap[username]
+	if !ok {
+		return nil, NoUsername
+	}
+	return &user, nil
+}
+
+func (u *UserServer) LoginWithToken(token string) (user model.User, err error) {
+	userByIDCacheMap, _ := u.getUserMaps()
+	id, ok := u.getToken2ID()[token]
+	if !ok {
+		err = NoToken
+		return
+	}
+	user, ok = userByIDCacheMap[id]
+	if !ok {
+		err = NoUser
+		return
+	}
+	u.SetToken(id, token)
+	return
 }

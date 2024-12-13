@@ -1,10 +1,10 @@
 package dbs
 
 import (
-	"github.com/littlebluewhite/Account/api"
 	"github.com/littlebluewhite/Account/app/dbs/influxdb"
 	"github.com/littlebluewhite/Account/app/dbs/rdb"
 	"github.com/littlebluewhite/Account/app/dbs/sql"
+	"github.com/littlebluewhite/Account/entry/domain"
 	"github.com/littlebluewhite/Account/util/config"
 	"github.com/patrickmn/go-cache"
 	"github.com/redis/go-redis/v9"
@@ -19,7 +19,7 @@ type Dbs struct {
 	Idb   *influxdb.Influx
 }
 
-func NewDbs(log api.Logger, IsTest bool, config config.Config) *Dbs {
+func NewDbs(log domain.Logger, IsTest bool, config config.Config) *Dbs {
 	d := &Dbs{}
 	if IsTest {
 		d.initTestSql(log, config.TestSQL)
@@ -33,7 +33,7 @@ func NewDbs(log api.Logger, IsTest bool, config config.Config) *Dbs {
 }
 
 // DB start
-func (d *Dbs) initTestSql(log api.Logger, Config config.SQLConfig) {
+func (d *Dbs) initTestSql(log domain.Logger, Config config.SQLConfig) {
 	s, err := sql.NewDB("mySQL", "DB_test.my_log", Config)
 	if err != nil {
 		log.Errorln("DB Connection failed")
@@ -45,7 +45,7 @@ func (d *Dbs) initTestSql(log api.Logger, Config config.SQLConfig) {
 }
 
 // DB start
-func (d *Dbs) initSql(log api.Logger, Config config.SQLConfig) {
+func (d *Dbs) initSql(log domain.Logger, Config config.SQLConfig) {
 	s, err := sql.NewDB("mySQL", "DB.my_log", Config)
 	if err != nil {
 		log.Errorln("DB Connection failed")
@@ -60,12 +60,12 @@ func (d *Dbs) initCache() {
 	d.Cache = cache.New(5*time.Minute, 10*time.Minute)
 }
 
-func (d *Dbs) initRdb(log api.Logger, Config config.RedisConfig) {
+func (d *Dbs) initRdb(log domain.Logger, Config config.RedisConfig) {
 	d.Rdb = rdb.NewClient(Config)
 	log.Infoln("Redis Connection successful")
 }
 
-func (d *Dbs) initIdb(log api.Logger, Config config.InfluxdbConfig) {
+func (d *Dbs) initIdb(log domain.Logger, Config config.InfluxdbConfig) {
 	d.Idb = influxdb.NewInfluxdb(Config, log)
 	log.Infoln("InfluxDB Connection successful")
 }

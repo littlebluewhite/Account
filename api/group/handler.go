@@ -2,7 +2,7 @@ package group
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/littlebluewhite/Account/api"
+	"github.com/littlebluewhite/Account/entry/domain"
 	"github.com/littlebluewhite/Account/entry/e_log"
 	"github.com/littlebluewhite/Account/util"
 )
@@ -13,10 +13,10 @@ type hOperate interface {
 
 type Handler struct {
 	o hOperate
-	l api.Logger
+	l domain.Logger
 }
 
-func NewHandler(o hOperate, l api.Logger) *Handler {
+func NewHandler(o hOperate, l domain.Logger) *Handler {
 	return &Handler{
 		o: o,
 		l: l,

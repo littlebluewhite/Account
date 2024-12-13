@@ -6,11 +6,13 @@ import (
 	dbs2 "github.com/littlebluewhite/Account/app/dbs"
 	"github.com/littlebluewhite/Account/dal/model"
 	"github.com/littlebluewhite/Account/dal/query"
+	"github.com/littlebluewhite/Account/entry/domain"
 	"github.com/littlebluewhite/Account/entry/e_user"
 	"github.com/littlebluewhite/Account/util/config"
 	"github.com/littlebluewhite/Account/util/my_log"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func setUpServer() (us *UserServer) {
@@ -61,15 +63,15 @@ func TestUserServer(t *testing.T) {
 		us.setUserMaps(userByIDCacheMap, userByUsernameCacheMap)
 
 		// Test correct login
-		err := us.Login("testuser", "testpassword")
+		_, err := us.Login("testuser", "testpassword")
 		assert.NoError(t, err)
 
 		// Test wrong password
-		err = us.Login("testuser", "wrongpassword")
+		_, err = us.Login("testuser", "wrongpassword")
 		assert.ErrorIs(t, err, WrongPassword)
 
 		// Test non-existent username
-		err = us.Login("nonexistent", "password")
+		_, err = us.Login("nonexistent", "password")
 		assert.ErrorIs(t, err, NoUsername)
 	})
 	t.Run("Create", func(t *testing.T) {
@@ -216,4 +218,65 @@ func TestUserServer(t *testing.T) {
 		assert.Equal(t, userByIDCacheMap, retrievedUserByIDCacheMap)
 		assert.Equal(t, userByUsernameCacheMap, retrievedUserByUsernameCacheMap)
 	})
+}
+
+func TestRegister(t *testing.T) {
+	// 假設 user_server 有個結構體並實作了 Register 方法
+	// 你需要依據實際程式碼修改此例
+	us := setUpServer()
+
+	testInput := domain.Register{
+		Username: "testuser",
+		Name:     "Test User",
+		Password: "Passw0rd",
+		Birthday: "2000-01-01",
+		Email:    "test@example.com",
+		Phone:    "123456789",
+		Country:  "TW",
+	}
+
+	// 呼叫要測試的 Register 函式
+	err := us.Register(testInput)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	// 根據你的實際實作邏輯進行驗證
+	// 例如，如果 Register 會將使用者資訊存進資料庫，你可以在此查詢資料庫確認資料正確性
+	// 以下只是示意
+	user, err := us.GetUserByUsername("testuser")
+	if err != nil {
+		t.Fatalf("Expected to find user 'testuser', got error %v", err)
+	}
+
+	if user == nil {
+		t.Fatalf("Expected to find a user, got nil")
+	}
+
+	// 假設 user 物件內的生日是 time.Time，且已經轉為 UTC
+	expectedBirthday, err := time.Parse("2006-01-02", testInput.Birthday)
+	if err != nil {
+		t.Fatalf("Error parsing birthday: %v", err)
+	}
+
+	if user.Birthday == nil {
+		t.Errorf("Expected Birthday is not nil")
+	} else {
+		y, m, d := user.Birthday.Date()
+		ey, em, ed := expectedBirthday.Date()
+		if y != ey || m != em || d != ed {
+			t.Errorf("Expected Birthday %v, got %v", expectedBirthday, user.Birthday)
+		}
+	}
+	// 驗證其他欄位
+	if user.Email == nil || *user.Email != testInput.Email {
+		t.Errorf("Expected Email %s, got %v", testInput.Email, user.Email)
+	}
+	if user.Phone == nil || *user.Phone != testInput.Phone {
+		t.Errorf("Expected Phone %s, got %v", testInput.Phone, user.Phone)
+	}
+	if user.Country == nil || *user.Country != testInput.Country {
+		t.Errorf("Expected Country %s, got %v", testInput.Country, user.Country)
+	}
+
 }

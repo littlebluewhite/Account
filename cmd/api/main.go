@@ -81,7 +81,7 @@ func main() {
 
 	// create servers
 	userServer := user_server.NewUserServer(DBS)
-	workspaceServer := workspace_server.NewWorkspaceServer(DBS, userServer)
+	workspaceServer := workspace_server.NewWorkspaceServer(DBS)
 	s := servers.NewServers(userServer, workspaceServer)
 
 	// start server
@@ -124,7 +124,7 @@ func main() {
 	// Restore default behavior on the interrupt signal and notify user of shutdown.
 	stop()
 	DBS.Close()
-	workspaceServer.Close()
+	s.Close()
 	mainLog.Infoln("Server exiting")
 
 }

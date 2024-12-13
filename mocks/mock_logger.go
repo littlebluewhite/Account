@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	"github.com/littlebluewhite/Account/api" // Adjust the import path as necessary
+	"github.com/littlebluewhite/Account/entry/domain"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -34,4 +34,4 @@ func (m *MockLogger) Warnf(s string, args ...interface{}) {
 }
 
 // Compile-time assertion to ensure MockLogger implements api.Logger
-var _ api.Logger = (*MockLogger)(nil)
+var _ domain.Logger = (*MockLogger)(nil)

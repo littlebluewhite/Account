@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gofiber/contrib/websocket"
-	"github.com/littlebluewhite/Account/api"
+	"github.com/littlebluewhite/Account/entry/domain"
 	"github.com/littlebluewhite/Account/entry/e_module"
 	"github.com/littlebluewhite/Account/util/my_log"
 )
@@ -17,7 +17,7 @@ type hub interface {
 
 type HubManager struct {
 	hubs map[e_module.Module]hub
-	l    api.Logger
+	l    domain.Logger
 }
 
 func NewHubManager() *HubManager {

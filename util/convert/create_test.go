@@ -2,6 +2,8 @@ package convert
 
 import (
 	"fmt"
+	"github.com/littlebluewhite/Account/entry/domain"
+	"github.com/littlebluewhite/Account/entry/e_user"
 	"reflect"
 	"testing"
 	"time"
@@ -310,6 +312,73 @@ func TestCreateConvert(t *testing.T) {
 			if dst.ID != 0 {
 				t.Errorf("Destination ID at index %d expected 0, got %d", i, dst.ID)
 			}
+		}
+	})
+	t.Run("test create users convert", func(t *testing.T) {
+		birthdayStr := "2000-01-01"
+		register := domain.Register{
+			Username: "testuser",
+			Name:     "Test User",
+			Password: "Passw0rd",
+			Birthday: birthdayStr,
+			Email:    "test@example.com",
+			Phone:    "123456789",
+			Country:  "TW",
+		}
+
+		// 使用 CreateConvert 將 domain.Register 轉換為 e_user.UserCreate
+		CreateUsers := CreateConvert[e_user.UserCreate, domain.Register]([]*domain.Register{&register})
+
+		// 驗證轉換結果數量
+		if len(CreateUsers) != 1 {
+			t.Fatalf("Expected 1 user in result, got %d", len(CreateUsers))
+		}
+
+		convertedUser := CreateUsers[0]
+
+		// 驗證 Username
+		if convertedUser.Username != register.Username {
+			t.Errorf("Expected Username %s, got %s", register.Username, convertedUser.Username)
+		}
+
+		// 驗證 Name
+		if convertedUser.Name == nil || *convertedUser.Name != register.Name {
+			t.Errorf("Expected Name %s, got %v", register.Name, convertedUser.Name)
+		}
+
+		// 驗證 Password
+		if convertedUser.Password != register.Password {
+			t.Errorf("Expected Password %s, got %s", register.Password, convertedUser.Password)
+		}
+
+		// 驗證 Birthday：原本是字串，需要確認是否轉換為 time.Time
+		// 如果 UserCreate 中的 Birthday 是 *time.Time，需將 register.Birthday 轉換後再比對
+		// 假設你的轉換程式邏輯會在 Convert 過程中將字串適當轉換為 time.Time，否則需自行在此寫 parsing 或其他檢查
+		if convertedUser.Birthday == nil {
+			t.Errorf("Expected Birthday is not nil")
+		} else {
+			// 嘗試將原字串 parse 成 time.Time 來比對
+			parsedBirthday, err := time.Parse("2006-01-02", register.Birthday)
+			if err != nil {
+				t.Errorf("Failed to parse original birthday: %v", err)
+			} else if !convertedUser.Birthday.Equal(parsedBirthday) {
+				t.Errorf("Expected Birthday %v, got %v", parsedBirthday, convertedUser.Birthday)
+			}
+		}
+
+		// 驗證 Email
+		if convertedUser.Email == nil || *convertedUser.Email != register.Email {
+			t.Errorf("Expected Email %s, got %v", register.Email, convertedUser.Email)
+		}
+
+		// 驗證 Phone
+		if convertedUser.Phone == nil || *convertedUser.Phone != register.Phone {
+			t.Errorf("Expected Phone %s, got %v", register.Phone, convertedUser.Phone)
+		}
+
+		// 驗證 Country
+		if convertedUser.Country == nil || *convertedUser.Country != register.Country {
+			t.Errorf("Expected Country %s, got %v", register.Country, convertedUser.Country)
 		}
 	})
 }

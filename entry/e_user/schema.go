@@ -26,13 +26,6 @@ type UserUpdate struct {
 	LoginAt  *time.Time `json:"login_at"`
 }
 
-func (uu *UserUpdate) GetKey(key string) int {
-	if key == "id" {
-		return int(uu.ID)
-	}
-	return 0
-}
-
 type User struct {
 	ID        int32            `json:"id"`
 	Username  string           `json:"username"`

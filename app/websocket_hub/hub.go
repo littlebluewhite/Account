@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gofiber/contrib/websocket"
-	"github.com/littlebluewhite/Account/api"
+	"github.com/littlebluewhite/Account/entry/domain"
 	"github.com/littlebluewhite/Account/entry/e_module"
 	"github.com/littlebluewhite/Account/util/my_log"
 )
@@ -14,7 +14,7 @@ type Hub struct {
 	registerChan   chan *client
 	unregisterChan chan *client
 	broadcast      chan []byte
-	l              api.Logger
+	l              domain.Logger
 }
 
 func NewHub(module e_module.Module) *Hub {

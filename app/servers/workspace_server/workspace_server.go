@@ -3,9 +3,9 @@ package workspace_server
 import (
 	"context"
 	"github.com/goccy/go-json"
-	"github.com/littlebluewhite/Account/api"
 	"github.com/littlebluewhite/Account/dal/model"
 	"github.com/littlebluewhite/Account/dal/query"
+	"github.com/littlebluewhite/Account/entry/domain"
 	"github.com/littlebluewhite/Account/entry/e_w_group"
 	"github.com/littlebluewhite/Account/entry/e_w_user"
 	"github.com/littlebluewhite/Account/entry/e_workspace"
@@ -18,21 +18,15 @@ import (
 	"time"
 )
 
-type userServer interface {
-	ReloadCacheByIDs(ids []int32) (e error)
-	Close()
-}
-
 type WorkspaceServer struct {
-	d  api.Dbs
-	l  api.Logger
+	d  domain.Dbs
+	l  domain.Logger
 	wg *sync.WaitGroup
-	us userServer
 }
 
-func NewWorkspaceServer(dbs api.Dbs, userServer userServer) *WorkspaceServer {
+func NewWorkspaceServer(dbs domain.Dbs) *WorkspaceServer {
 	l := my_log.NewLog("app/workspace_server")
-	return &WorkspaceServer{d: dbs, l: l, us: userServer, wg: new(sync.WaitGroup)}
+	return &WorkspaceServer{d: dbs, l: l, wg: new(sync.WaitGroup)}
 }
 
 func (w *WorkspaceServer) Start(ctx context.Context) {
@@ -63,7 +57,6 @@ func (w *WorkspaceServer) listen(ctx context.Context) {
 
 func (w *WorkspaceServer) Close() {
 	w.wg.Wait()
-	w.us.Close()
 	w.l.Infoln("Workspace server stop")
 }
 

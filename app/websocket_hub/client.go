@@ -3,16 +3,16 @@ package websocket_hub
 import (
 	"context"
 	"github.com/gofiber/contrib/websocket"
-	"github.com/littlebluewhite/Account/api"
+	"github.com/littlebluewhite/Account/entry/domain"
 )
 
 type client struct {
 	conn *websocket.Conn
 	box  chan []byte
-	l    api.Logger
+	l    domain.Logger
 }
 
-func newClient(conn *websocket.Conn, log api.Logger) *client {
+func newClient(conn *websocket.Conn, log domain.Logger) *client {
 	return &client{
 		conn: conn,
 		box:  make(chan []byte, 256),

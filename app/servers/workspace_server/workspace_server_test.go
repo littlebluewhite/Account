@@ -5,11 +5,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/goccy/go-json"
-	"github.com/littlebluewhite/Account/api"
 	dbs2 "github.com/littlebluewhite/Account/app/dbs"
-	"github.com/littlebluewhite/Account/app/servers/user_server"
 	"github.com/littlebluewhite/Account/dal/model"
 	"github.com/littlebluewhite/Account/dal/query" // Import the query package
+	"github.com/littlebluewhite/Account/entry/domain"
 	"github.com/littlebluewhite/Account/entry/e_w_user"
 	"github.com/littlebluewhite/Account/entry/e_workspace"
 	"github.com/littlebluewhite/Account/util/config"
@@ -31,11 +30,8 @@ func setUpServer(ctx context.Context) *WorkspaceServer {
 	// Initialize database connections (ensure this points to a test DB)
 	DBS := dbs2.NewDbs(dbTestLog, true, Config)
 
-	// Initialize UserServer
-	us := user_server.NewUserServer(DBS)
-
 	// Initialize WorkspaceServer
-	ws := NewWorkspaceServer(DBS, us)
+	ws := NewWorkspaceServer(DBS)
 
 	// Start the WorkspaceServer
 	go func() {
@@ -46,7 +42,7 @@ func setUpServer(ctx context.Context) *WorkspaceServer {
 }
 
 // cleanUpDatabase cleans up the workspace table after tests.
-func cleanUpDatabase(t *testing.T, dbs api.Dbs) {
+func cleanUpDatabase(t *testing.T, dbs domain.Dbs) {
 	q := query.Use(dbs.GetSql()) // Initialize the query builder
 	ctx := context.Background()
 
@@ -258,7 +254,7 @@ func TestGetDefaultUserAuth(t *testing.T) {
 	ws := setUpServer(ctx)
 
 	// Populate the cacheMap with a test workspace
-	cacheMap := map[int]model.Workspace{1: model.Workspace{
+	cacheMap := map[int]model.Workspace{1: {
 		ID:               1,
 		UserAuthConst:    json.RawMessage(`{"constKey":"constValue"}`),
 		UserAuthPassDown: json.RawMessage(`{"passDownKey":"passDownValue"}`),

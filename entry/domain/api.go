@@ -1,9 +1,10 @@
-package api
+package domain
 
 import (
 	"context"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/littlebluewhite/Account/app/dbs/influxdb"
+	"github.com/littlebluewhite/Account/dal/model"
 	"github.com/littlebluewhite/Account/entry/e_module"
 	"github.com/patrickmn/go-cache"
 	"github.com/redis/go-redis/v9"
@@ -26,7 +27,9 @@ type HubManager interface {
 
 type Servers interface {
 	Start(ctx context.Context)
-	Login(username string, password string) error
+	Login(username string, password string) (model.User, error)
+	Register(register Register) error
+	LoginWithToken(token string) (model.User, error)
 }
 
 type Logger interface {

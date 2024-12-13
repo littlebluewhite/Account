@@ -2,7 +2,7 @@ package user
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/littlebluewhite/Account/api"
+	"github.com/littlebluewhite/Account/entry/domain"
 	"github.com/littlebluewhite/Account/util/my_log"
 )
 
@@ -20,9 +20,10 @@ func RegisterRouter(g group) {
 	h := NewHandler(g.GetServers(), log)
 
 	c.Post("/login", h.Login)
+	c.Post("/register", h.Register)
 }
 
 type group interface {
 	GetApp() fiber.Router
-	GetServers() api.Servers
+	GetServers() domain.Servers
 }
