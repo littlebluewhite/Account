@@ -280,3 +280,46 @@ func TestRegister(t *testing.T) {
 	}
 
 }
+
+func TestLoginWithToken(t *testing.T) {
+	us := setUpServer()
+
+	// Mock a user and token
+	testUser := model.User{
+		ID:       1,
+		Username: "testuser",
+		Password: "testpassword",
+	}
+
+	// Preload user maps
+	userByIDCacheMap := map[int]model.User{1: testUser}
+	userByUsernameCacheMap := map[string]model.User{"testuser": testUser}
+	us.setUserMaps(userByIDCacheMap, userByUsernameCacheMap)
+
+	// Create a token for the user
+	us.createToken(int(testUser.ID))
+	tokenMap := us.getID2Token()
+	token := tokenMap[int(testUser.ID)].value
+
+	t.Run("Valid Token", func(t *testing.T) {
+		// Call LoginWithToken with a valid token
+		user, err := us.LoginWithToken(token)
+		assert.NoError(t, err, "Expected no error for valid token")
+		assert.Equal(t, testUser.ID, user.ID, "User ID should match")
+		assert.Equal(t, testUser.Username, user.Username, "Username should match")
+	})
+
+	t.Run("Invalid Token", func(t *testing.T) {
+		// Call LoginWithToken with an invalid token
+		_, err := us.LoginWithToken("invalidToken")
+		assert.ErrorIs(t, err, NoToken, "Expected NoToken error for invalid token")
+	})
+
+	t.Run("User Not Found", func(t *testing.T) {
+		// Remove the user from the cache but keep the token
+		us.setUserMaps(map[int]model.User{}, userByUsernameCacheMap)
+
+		_, err := us.LoginWithToken(token)
+		assert.ErrorIs(t, err, NoUser, "Expected NoUser error for missing user")
+	})
+}

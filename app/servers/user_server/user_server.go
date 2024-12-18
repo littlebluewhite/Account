@@ -181,9 +181,17 @@ func (u *UserServer) setToken2ID(tokenMap map[string]int) {
 	u.d.GetCache().Set("token2id", tokenMap, cache.NoExpiration)
 }
 
+func (u *UserServer) getTokenCache() (token2ID map[string]int, id2Token map[int]tokenTime) {
+	return u.getToken2ID(), u.getID2Token()
+}
+
+func (u *UserServer) setTokenCache(token2ID map[string]int, id2Token map[int]tokenTime) {
+	u.d.GetCache().Set("token2id", token2ID, cache.NoExpiration)
+	u.d.GetCache().Set("id2token", id2Token, cache.NoExpiration)
+}
+
 func (u *UserServer) checkToken() {
-	idToken := u.getID2Token()
-	tokenId := u.getToken2ID()
+	tokenId, idToken := u.getTokenCache()
 	for id, t := range idToken {
 		if t.timeout <= 0 {
 			delete(idToken, id)
@@ -193,8 +201,7 @@ func (u *UserServer) checkToken() {
 			idToken[id] = t
 		}
 	}
-	u.setID2Token(idToken)
-	u.setToken2ID(tokenId)
+	u.setTokenCache(tokenId, idToken)
 }
 
 func (u *UserServer) createToken(id int) {
@@ -211,8 +218,7 @@ func (u *UserServer) createToken(id int) {
 }
 
 func (u *UserServer) DeleteToken(ids []int) (err error) {
-	idToken := u.getID2Token()
-	tokenId := u.getToken2ID()
+	tokenId, idToken := u.getTokenCache()
 	for _, id := range ids {
 		t, ok := idToken[id]
 		if !ok {
@@ -221,14 +227,12 @@ func (u *UserServer) DeleteToken(ids []int) (err error) {
 		delete(idToken, id)
 		delete(tokenId, t.value)
 	}
-	u.setID2Token(idToken)
-	u.setToken2ID(tokenId)
+	u.setTokenCache(tokenId, idToken)
 	return
 }
 
 func (u *UserServer) SetToken(id int, token string) {
-	idToken := u.getID2Token()
-	tokenId := u.getToken2ID()
+	tokenId, idToken := u.getTokenCache()
 	t, ok := idToken[id]
 	// check this user has token
 	if ok {
@@ -236,8 +240,7 @@ func (u *UserServer) SetToken(id int, token string) {
 	}
 	idToken[id] = tokenTime{value: token, timeout: 600}
 	tokenId[token] = id
-	u.setID2Token(idToken)
-	u.setToken2ID(tokenId)
+	u.setTokenCache(tokenId, idToken)
 }
 
 func (u *UserServer) Create(ec []*e_user.UserCreate) ([]model.User, error) {

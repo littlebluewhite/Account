@@ -21,6 +21,7 @@ func RegisterRouter(g group) {
 
 	c.Post("/login", h.Login)
 	c.Post("/register", h.Register)
+	c.Post("/loginWithToken", h.LoginWithToken)
 }
 
 type group interface {
